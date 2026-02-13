@@ -23,4 +23,7 @@ public interface IssueRepository extends JpaRepository<Issue, Long> {
 
     @Query("Select new com.example.CivicResolve.dto.CategoryCount(i.category, COUNT(i)) from Issue i group by i.category")
     List<CategoryCount> countIssuesByCategory();
+
+    @org.springframework.data.jpa.repository.EntityGraph(attributePaths = {"user", "contractor"})
+    List<Issue> findByUserId(Integer userId);
 }

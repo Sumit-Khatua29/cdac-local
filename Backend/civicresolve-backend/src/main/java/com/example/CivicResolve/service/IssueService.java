@@ -30,17 +30,20 @@ public class IssueService {
     @Autowired
     private EmailService emailService;
 
-    public void deleteIssue(Long id, String username) {
+    public void deleteIssue(Long id, com.example.CivicResolve.security.UserDetailsImpl userDetails) {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Issue not found"));
 
-        if (!issue.getUser().getUsername().equals(username) &&
-                !userRepository.findByUsername(username).get().getRole().name().equals("ROLE_ADMIN")) {
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        // Check if user is owner or admin (using ID from UserDetails)
+        if (!issue.getUser().getId().equals(userDetails.getId()) && !isAdmin) {
             throw new RuntimeException("You are not authorized to delete this issue");
         }
 
         // Citizens cannot delete issues that are being processed
-        if (!userRepository.findByUsername(username).get().getRole().name().equals("ROLE_ADMIN")) {
+        if (!isAdmin) {
             if (issue.getStatus() == IssueStatus.VERIFIED || issue.getStatus() == IssueStatus.IN_PROGRESS) {
                 throw new RuntimeException("Cannot delete issue while it is under review or in progress.");
             }
@@ -51,9 +54,9 @@ public class IssueService {
 
     public IssueResponse createIssue(String description, String address, String pincode, Category category,
                                      String otherCategory,
-                                     Double latitude, Double longitude, MultipartFile image, String username) {
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+                                     Double latitude, Double longitude, MultipartFile image, com.example.CivicResolve.security.UserDetailsImpl userDetails) {
+        // Optimization: Use getReferenceById to get a proxy without DB hit
+        Users user = userRepository.getReferenceById(userDetails.getId());
 
         Issue issue = new Issue();
         issue.setDescription(description);
@@ -85,7 +88,8 @@ public class IssueService {
 
         // Send confirmation email asynchronously
         try {
-            emailService.sendIssueReportedEmail(user.getEmail(), user.getUsername(), issue.getDescription(),
+            // Use details from UserDetailsImpl to avoid loading User entity
+            emailService.sendIssueReportedEmail(userDetails.getEmail(), userDetails.getUsername(), issue.getDescription(),
                     savedIssue.getId(), issue.getImageData(), issue.getImageName());
         } catch (Exception e) {
             System.err.println("Failed to send issue reporting email: " + e.getMessage());
@@ -96,12 +100,14 @@ public class IssueService {
 
     public IssueResponse updateIssue(Long id, String description, String address, String pincode, Category category,
                                      Double latitude,
-                                     Double longitude, MultipartFile image, String username) {
+                                     Double longitude, MultipartFile image, com.example.CivicResolve.security.UserDetailsImpl userDetails) {
         Issue issue = issueRepository.findById(id)
                 .orElseThrow(() -> new RuntimeException("Issue not found"));
 
-        if (!issue.getUser().getUsername().equals(username) &&
-                !userRepository.findByUsername(username).get().getRole().name().equals("ROLE_ADMIN")) {
+        boolean isAdmin = userDetails.getAuthorities().stream()
+                .anyMatch(a -> a.getAuthority().equals("ROLE_ADMIN"));
+
+        if (!issue.getUser().getId().equals(userDetails.getId()) && !isAdmin) {
             throw new RuntimeException("You are not authorized to update this issue");
         }
 
@@ -137,10 +143,9 @@ public class IssueService {
         return issueRepository.findAll().stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
-    public List<IssueResponse> getUserIssues(String username) {
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
-        return issueRepository.findByUser(user).stream().map(this::mapToResponse).collect(Collectors.toList());
+    public List<IssueResponse> getUserIssues(com.example.CivicResolve.security.UserDetailsImpl userDetails) {
+        // Optimization: Use findByUserId to avoid fetching User entity
+        return issueRepository.findByUserId(userDetails.getId()).stream().map(this::mapToResponse).collect(Collectors.toList());
     }
 
     public IssueResponse getIssueById(Long id) {
@@ -224,9 +229,10 @@ public class IssueService {
         issueRepository.save(issue);
     }
 
-    public List<IssueResponse> getContractorIssues(String username) {
-        Users user = userRepository.findByUsername(username)
-                .orElseThrow(() -> new RuntimeException("User not found"));
+    public List<IssueResponse> getContractorIssues(com.example.CivicResolve.security.UserDetailsImpl userDetails) {
+        // Optimization: Use getReferenceById to avoid unnecessary User fetch
+        Users user = userRepository.getReferenceById(userDetails.getId());
+        
         com.example.CivicResolve.Model.Contractor contractor = contractorRepository.findByUser(user)
                 .orElseThrow(() -> new RuntimeException("Contractor profile not found"));
 

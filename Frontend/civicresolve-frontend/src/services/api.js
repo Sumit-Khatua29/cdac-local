@@ -1,7 +1,7 @@
 import axios from "axios";
 
 const api = axios.create({
-  baseURL: "https://civicresole-backend-api.onrender.com/api",
+  baseURL: "/api",
 });
 
 // Add a request interceptor to attach the token

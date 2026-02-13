@@ -38,7 +38,7 @@ public class IssueController {
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
 
         IssueResponse issue = issueService.createIssue(description, address, pincode, category, otherCategory, latitude,
-                longitude, image, userDetails.getUsername());
+                longitude, image, userDetails);
         return ResponseEntity.ok(issue);
     }
 
@@ -57,7 +57,7 @@ public class IssueController {
 
         IssueResponse issue = issueService.updateIssue(id, description, address, pincode, category, latitude, longitude,
                 image,
-                userDetails.getUsername());
+                userDetails);
         return ResponseEntity.ok(issue);
     }
 
@@ -69,7 +69,7 @@ public class IssueController {
     @GetMapping("/my")
     @PreAuthorize("hasRole('CITIZEN') or hasRole('ADMIN') or hasRole('CONTRACTOR')")
     public ResponseEntity<List<IssueResponse>> getMyIssues(@AuthenticationPrincipal UserDetailsImpl userDetails) {
-        return ResponseEntity.ok(issueService.getUserIssues(userDetails.getUsername()));
+        return ResponseEntity.ok(issueService.getUserIssues(userDetails));
     }
 
     @GetMapping("/{id}")
@@ -81,7 +81,7 @@ public class IssueController {
     @PreAuthorize("hasRole('CITIZEN') or hasRole('ADMIN') or hasRole('CONTRACTOR')")
     public ResponseEntity<MessageResponse> deleteIssue(@PathVariable Long id,
                                                        @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        issueService.deleteIssue(id, userDetails.getUsername());
+        issueService.deleteIssue(id, userDetails);
         return ResponseEntity.ok(new MessageResponse("Issue deleted successfully!"));
     }
 
@@ -122,7 +122,7 @@ public class IssueController {
     @PreAuthorize("hasRole('CONTRACTOR')")
     public ResponseEntity<List<IssueResponse>> getContractorIssues(
             @AuthenticationPrincipal UserDetailsImpl userDetails) {
-        return ResponseEntity.ok(issueService.getContractorIssues(userDetails.getUsername()));
+        return ResponseEntity.ok(issueService.getContractorIssues(userDetails));
     }
 
     @GetMapping("/{id}/image")
