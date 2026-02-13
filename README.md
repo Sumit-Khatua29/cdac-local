@@ -52,7 +52,7 @@ Finally, let's see the beautiful UI.
     ```
 2.  If this is your first time here, let's install the packages:
     ```bash
-    npm install
+    npm install --legacy-peer-deps
     ```
 3.  **🔑 Key Step**: We need a Google Client ID for logins to work.
     *   Create a file named `.env` in this folder.
