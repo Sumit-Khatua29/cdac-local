@@ -1,0 +1,14 @@
+{
+    "configurations": [
+        {
+            "type": "java",
+            "name": "Spring Boot-CivicResolveApplication<CivicResolve>",
+            "request": "launch",
+            "cwd": "${workspaceFolder}",
+            "mainClass": "com.example.CivicResolve.CivicResolveApplication",
+            "projectName": "CivicResolve",
+            "args": "",
+            "envFile": "${workspaceFolder}/.env"
+        }
+    ]
+}
